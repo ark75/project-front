@@ -2,10 +2,99 @@
 <head>
     <title>RPG</title>
     <script src=https://code.jquery.com/jquery-3.6.0.min.js></script>
-    <link href="/css/my.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/my.css">
 </head>
 <body>
 <h1>RPG admin panel</h1>
+<table class="accountsList">
+    <h2>Accounts List</h2>
+   <tbody class="rows">
+    <tr>
+        <td>#</td>
+        <td>Name</td>
+        <td>Title</td>
+        <td>Race</td>
+        <td>Profession</td>
+        <td>Level</td>
+        <td>Birthday</td>
+        <td>Banned</td>
+    </tr>
+   </tbody>
+</table>
+<div class="paging-buttons">
+    <span class="pages">Pages: </span>
+</div>
+<template class="account-template">
+    <tr class="data-row">
+    <td class="table__id"></td>
+    <td class="table__name"></td>
+    <td class="table__title"></td>
+    <td class="table__race"></td>
+    <td class="table__profession"></td>
+    <td class="table__level"></td>
+    <td class="table__birthday"></td>
+    <td class="table__banned"></td>
+    </tr>
+</template>
+<script>
+    const baseurl = "rest/players";
+    const playersCount = "rest/players/count";
+    var pageSize = 0;
+    var currentPageIndex = 0;
+    var countAccounts = 0;
+    var countPages = 0;
+
+ function getAccounts() {
+     $.get(baseurl, function (data) {
+
+         data.forEach(item => {
+             let row = new Account(item).generateRow();
+             document.querySelector(".rows").append(row);
+         })
+     });
+ }
+ function getPlayers() {
+     $.get(playersCount, function (data) {
+console.log(data)
+                    document.querySelector(".paging-buttons").textContent = data;
+            });
+ }
+
+
+ getAccounts();
+ getPlayers();
+
+    class Account {
+        constructor(item) {
+            this.id = item.id;
+            this.name = item.name;
+            this.title = item.title;
+            this.race = item.race;
+            this.profession = item.profession;
+            this.level = item.level;
+            this.birthday = item.birthday;
+            this.banned = item.banned;
+        }
+
+        _getTemplate() {
+            return document.querySelector(".account-template").content.cloneNode(true);
+        }
+
+        generateRow() {
+            this.row = this._getTemplate();
+            this.row.querySelector(".table__id").textContent = this.id;
+            this.row.querySelector(".table__name").textContent = this.name;
+            this.row.querySelector(".table__title").textContent = this.title;
+            this.row.querySelector(".table__race").textContent = this.race;
+            this.row.querySelector(".table__profession").textContent = this.profession;
+            this.row.querySelector(".table__level").textContent = this.level;
+            this.row.querySelector(".table__birthday").textContent = this.birthday;
+            this.row.querySelector(".table__banned").textContent = this.banned;
+            return this.row;
+        }
+
+    }
+</script>
 
 </body>
 </html>
