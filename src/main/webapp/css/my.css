@@ -1,6 +1,20 @@
 .accountsList {
-    border: black 1px;
+    border-collapse: collapse;
 }
-* {
-    color: blue;
+
+td, tr {
+    padding: 3px; /* Поля вокруг содержимого таблицы */
+    border: 1px solid black
 }
+
+.count {
+    display: flex;
+    flex-flow: row;
+
+}
+.page-size {
+    width: auto;
+    height: 1rem;
+    margin-left: 5px;
+}
+
