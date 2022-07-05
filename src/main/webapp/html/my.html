@@ -9,13 +9,14 @@
     <title>RPG</title>
     <script src=https://code.jquery.com/jquery-3.6.0.min.js></script>
     <link href="/css/my.css" rel="stylesheet">
+    <script type= "module"  src="/css/my.js"></script>
 </head>
 <body>
 <h1>RPG admin panel</h1>
 <h2>Accounts List</h2>
 <div class="count">
     <h3>Count per page: </h3>
-    <form >
+    <form>
         <select class="page-size" name="pageSize">
             <option selected value=3>3</option>
             <option value=10>10</option>
@@ -34,14 +35,14 @@
         <td>Level</td>
         <td>Birthday</td>
         <td>Banned</td>
+        <td>Edit</td>
+        <td>Delete</td>
     </tr>
     </tbody>
 </table>
 <div class="paging-buttons">
     <span class="pages">Pages: </span>
-    <div class="buttons">
-        <button class="button-row">1</button>
-    </div>
+    <div class="buttons"></div>
 </div>
 <template class="account-template">
     <tr class="data-row">
@@ -53,65 +54,10 @@
         <td class="table__level"></td>
         <td class="table__birthday"></td>
         <td class="table__banned"></td>
+        <td class="table__edit"></td>
+        <td class="table__delete"></td>
     </tr>
 </template>
-<template class="button-template">
-    <button class="button-row" id="#">1</button>
-</template>
-<script type="module">
-
-    import Account from "../css/Account.js";
-
-    const pageSize = document.querySelector('.page-size');
-    const buttons = document.querySelector('.buttons')
-    const baseurl = "rest/players";
-    const playersCount = "rest/players/count";
-    var pagesNumber = 3;
-    var numberOfButtons = 1
-    var currentPageIndex = 0;
-    var countAccounts = 0;
-    var countPages = 0;
-    const buttonTemplate = document.querySelector('.button-template');
-
-    $("select").change(function(){
-         pagesNumber = this.value;
-
-    });
-
-    function getAccounts(pageNumber, pageSize) {
-        let url = baseurl + "/?pageNumber=" + pageNumber.toString() + "&pageSize=" + pageSize.toString();
-        $.get(url, function (data) {
-              data.forEach(item => {
-
-                let row = new Account(item).generateRow();
-                document.querySelector(".rows").append(row);
-            });
-           numberOfButtons =  ( getPlayers()/ pageSize);
-            for (let i = 1; i < numberOfButtons+1; i++) {
-               let newButton  = buttonTemplate.content.cloneNode(true);
-               newButton.textContent = i.toString();
-               newButton.id =i.toString();
-             buttons.append(newButton);
-            }
-        });
-    }
-
-
-
-
-    function getPlayers() {
-        $.get(playersCount, function (data) {
-            countAccounts = data;
-        });
-        return countAccounts;
-    }
-
-
-    getAccounts(currentPageIndex,pagesNumber);
-    getPlayers();
-
-
-</script>
 
 </body>
 </html>

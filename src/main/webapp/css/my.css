@@ -30,3 +30,7 @@ td, tr {
     width: 25px;
 }
 
+.button_active {
+    color: red;
+    /*background-color: black ;*/
+}
