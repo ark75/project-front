@@ -12,21 +12,19 @@
 
 
 </head>
-<body>
+
+<body onload="show_list()">
 <h1>RPG admin panel</h1>
 <h2>Accounts List</h2>
-<div class="count">
-    <h3>Count per page: </h3>
-    <form>
-        <select class="page-size" name="pageSize">
-            <option selected value=3>3</option>
-            <option value=10>10</option>
-            <option value=20>20</option>
-        </select>
-    </form>
-</div>
-<table class="accountsList">
-    <tbody class="rows">
+
+<label for="count_1">Count per page: </label>
+<select id="count_1" onchange="show_list()">
+    <option selected value=3>3</option>
+    <option value=10>10</option>
+    <option value=20>20</option>
+</select>
+
+<table id="accountsList">
     <tr>
         <td>#</td>
         <td>Name</td>
@@ -39,270 +37,298 @@
         <td>Edit</td>
         <td>Delete</td>
     </tr>
-    </tbody>
 </table>
-<div class="paging-buttons">
-    <span class="pages">Pages: </span>
-    <div class="buttons"></div>
+<div id="paging_buttons">
+    Pages:
 </div>
-<template class="account-template">
-    <tr class="data-row">
-        <td class="table__id"></td>
-        <td class="table__name"></td>
-        <td class="table__title"></td>
-        <td class="table__race"></td>
-        <td class="table__profession"></td>
-        <td class="table__level"></td>
-        <td class="table__birthday"></td>
-        <td class="table__banned"></td>
-        <td class="table__edit"></td>
-        <td class="table__delete"></td>
-    </tr>
-</template>
+
 <script>
-    const buttons = document.querySelector('.buttons')
-    const baseurl = "rest/players";
-    const playersCount = "rest/players/count";
-    let pagesNumber = 3;
-    let currentPageIndex = 0;
-    let countAccounts = 0;
-
-    class Account {
-        constructor(item) {
-            this.id = item.id;
-            this.name = item.name;
-            this.title = item.title;
-            this.race = item.race;
-            this.profession = item.profession;
-            this.level = item.level;
-            this.birthday = new Date(item.birthday).toLocaleDateString();
-            this.banned = item.banned;
-
-            this.edit_button = "<img src='img/edit.png'/> id= button_edit_"+ this.id + " onclick='editAcc(" + this.id + ")'>";
-            let editImage = document.createElement("img");
-            editImage.src="img/edit.png";
-            editImage.onclick = editAcc(this.id);
-
-            console.log(editImage);
-                       }
 
 
-        _getTemplate() {
-            return document.querySelector(".account-template").content.cloneNode(true);
-        }
-
-        generateRow() {
-            this.row = this._getTemplate();
-            this.row.querySelector(".table__id").textContent = this.id;
-            this.row.querySelector(".table__name").textContent = this.name;
-            this.row.querySelector(".table__title").textContent = this.title;
-            this.row.querySelector(".table__race").textContent = this.race;
-            this.row.querySelector(".table__profession").textContent = this.profession;
-            this.row.querySelector(".table__level").textContent = this.level;
-            this.row.querySelector(".table__birthday").textContent = this.birthday;
-            this.row.querySelector(".table__banned").textContent = this.banned;
-            let editImage = document.createElement("img");
-            editImage.src = "/img/edit.png";
-            editImage.id = this.id + "edit";
-            console.log(typeof editImage);
-            // $(editImage).innerHTML(editImage.toString() + " onclick='editAcc("+this.id +")")
-            console.log(editImage);
-            this.row.querySelector(".table__edit").append(editImage);
-            $(editImage).click(function () {
-                editAcc(Number.parseInt(editImage.id));
+    function show_list() {
+        let url = "/rest/players";
+        $.get(url, function (response) {
+            $.each(response, function (i, item) {
+                $('<tr>').html("<td>"
+                    + item.id + "</td><td>"
+                    + item.name + "</td><td>"
+                    + item.title + "</td><td>"
+                    + item.race + "</td><td>"
+                    + item.profession + "</td><td>"
+                    + item.level + "</td><td>"
+                    + new Date(item.birthday).toLocaleDateString() + "</td><td>"
+                    + item.banned + "</td>"
+                ).appendTo("#accountsList")
             });
-
-            let deleteImage = document.createElement("img");
-            deleteImage.src = "/img/delete.png";
-            deleteImage.id = this.id + "delete";
-            $(deleteImage).click(function () {
-                deleteAcc(Number.parseInt(deleteImage.id));
-            });
-            this.row.querySelector(".table__delete").append(deleteImage);
-            return this.row;
-        }
-
-    }
-
-    function getAccounts(currentPageIndex, pagesNumber) {
-        let url = baseurl + "/?pageNumber=" + currentPageIndex.toString() + "&pageSize=" + pagesNumber.toString();
-        $.get(url, function (data) {
-            data.forEach(item => {
-                let row = new Account(item).generateRow();
-                document.querySelector(".rows").append(row);
-            });
-            getButtons();
         });
-    }
+        let totalCount = getTotalCount();
+        let countPerPage = $("#count_1").val();
 
-    function getButtons() {
-        let numberOfButtons = (getPlayers() / pagesNumber);
-        for (let i = 0; i < numberOfButtons; i++) {
-            let newButton = document.createElement("button");
-            newButton.textContent = (i + 1).toString();
-            newButton.id = i.toString();
-            newButton.className = "button-row";
-            newButton.classList.remove("button_active");
+        if (countPerPage == null) {
+            countPerPage = 3;
+        }
+        let pagesCount = Math.ceil(totalCount / countPerPage);
 
-            if (Number(currentPageIndex) === i) {
-                newButton.classList.add("button_active");
-            }
-            $(newButton).click(function () {
-                currentPageIndex = newButton.id;
-                countAccounts = getPlayers();
-                resetForm();
-                getAccounts(currentPageIndex, pagesNumber);
-            });
-            buttons.append(newButton);
+        for (let i = 0; i < pagesCount; i++) {
+            let button_tag = "<button>" + (i + 1) + "</button>";
+            let btn = $(button_tag)
+                .attr('id', "paging_button_" + i)
+                .attr('onclick', "show_list()")
+                .addClass('pgn-btn-styled');
+            console.log(btn);
+            $('#paging_buttons').append(btn);
+
         }
     }
 
-    function resetForm() {
-        let rowData = document.querySelectorAll('.data-row');
-        rowData.forEach(item => item.remove());
-        let buttonData = document.querySelectorAll('.button-row')
-        buttonData.forEach(item => item.remove());
-    }
-
-    function getPlayers() {
-        $.get(playersCount, function (data) {
-            countAccounts = data;
-        });
-        return countAccounts;
-    }
-
-    function editAcc(id) {
-        let editImage = document.getElementById(id + "edit");
-        let deleteImage = document.getElementById(id + "delete");
-        editImage.src = "/img/save.png";
-        deleteImage.src = "";
-        let editRow = editImage.parentNode.parentNode;
-        let property_save_tag = "saveAcc(" + id + ")";
-        $(editImage).attr('onclick', property_save_tag);
-
-        let children = editRow.children;
-        let td_name = children[1];
-
-        let td_title = children[2];
-        let td_race = children[3];
-        let race_id = "#race" + id;
-        let race_current_value = td_race.innerHTML;
-
-        let td_profession = children[4];
-        let profession_id = "#profession" + id;
-        let profession_current_value = td_profession.innerHTML;
-
-        let td_banned = children[7];
-        let banned_id = "#banned" + id;
-        let banned_current_value = td_banned.innerHTML;
-
-        td_name.innerHTML = "<input id= 'input_name_" + id + "'type ='text'value='" + td_name.innerHTML + "'>";
-        td_title.innerHTML = "<input id= 'input_title_" + id + "'type ='text'value='" + td_title.innerHTML + "'>";
-        td_race.innerHTML = getDropdownRace(id);
-        $(race_id).val(race_current_value).change;
-
-        td_profession.innerHTML = getDropdownProfession(id);
-        $(profession_id).val(profession_current_value).change;
-
-        td_banned.innerHTML = getDropdownBanned(id);
-        $(banned_id).val(banned_current_value).change;
-
-    }
-    function saveAcc(id) {
-        let value_name = $('#input_name_'+id).val();
-        console.log(value_name);
-        let value_title = $("#input_title_" + id).val();
-        let value_race = $("#input_race_" + id).val();
-        let value_profession = $("#input_profession_" + id).val();
-        let value_banned = $("#input_banned_" + id).val();
-
-        let url = "/rest/players/" + id;
+    function getTotalCount() {
+        let url = "/rest/players/count";
+        let res = 0;
         $.ajax({
             url: url,
-            type: 'POST',
-            dataType: 'json',
-            contentType: 'application/json;charset=UTF-8',
             async: false,
-            data: JSON.stringify(({
-                "name": value_name,
-                "title": value_title,
-                "race": value_race,
-                "profession": value_profession,
-                "banned": value_banned
-            })),
-            success: function () {
-                resetForm();
-                getAccounts();
+            success: function (result) {
+                res = parseInt(result);
             }
-
         })
 
+        return res;
     }
 
-    function deleteAcc(id) {
+    // class Account {
+    //     constructor(item) {
+    //         this.id = item.id;
+    //         this.name = item.name;
+    //         this.title = item.title;
+    //         this.race = item.race;
+    //         this.profession = item.profession;
+    //         this.level = item.level;
+    //         this.birthday = new Date(item.birthday).toLocaleDateString();
+    //         this.banned = item.banned;
+    //
+    //         let editImage = document.createElement("img");
+    //         editImage.src = "/img/edit.png";
+    //         editImage.id = this.id + "edit";
+    //         this.editImage= editImage;
+    //
+    //     }
+    //
+    //
+    //     _getTemplate() {
+    //         return document.querySelector(".account-template").content.cloneNode(true);
+    //     }
+    //
+    //     generateRow() {
+    //         this.row = this._getTemplate();
+    //         this.row.querySelector(".table__id").textContent = this.id;
+    //         this.row.querySelector(".table__name").textContent = this.name;
+    //         this.row.querySelector(".table__title").textContent = this.title;
+    //         this.row.querySelector(".table__race").textContent = this.race;
+    //         this.row.querySelector(".table__profession").textContent = this.profession;
+    //         this.row.querySelector(".table__level").textContent = this.level;
+    //         this.row.querySelector(".table__birthday").textContent = this.birthday;
+    //         this.row.querySelector(".table__banned").textContent = this.banned;
+    //
+    //         this.row.querySelector(".table__edit").append(this.editImage);
+    //
+    //         let deleteImage = document.createElement("img");
+    //         deleteImage.src = "/img/delete.png";
+    //         deleteImage.id = this.id + "delete";
+    //         $(deleteImage).click(function () {
+    //             deleteAcc(Number.parseInt(deleteImage.id));
+    //         });
+    //         this.row.querySelector(".table__delete").append(deleteImage);
+    //         return this.row;
+    //     }
+    //
+    // }
+    //
+    // function getAccounts(currentPageIndex, pagesNumber) {
+    //     let url = baseurl + "/?pageNumber=" + currentPageIndex.toString() + "&pageSize=" + pagesNumber.toString();
+    //     $.get(url, function (data) {
+    //         data.forEach(item => {
+    //             let row = new Account(item).generateRow();
+    //             document.querySelector(".rows").append(row);
+    //         });
+    //         getButtons();
+    //     });
+    // }
+    //
+    // function getButtons() {
+    //     let numberOfButtons = (getPlayers() / pagesNumber);
+    //     for (let i = 0; i < numberOfButtons; i++) {
+    //         let newButton = document.createElement("button");
+    //         newButton.textContent = (i + 1).toString();
+    //         newButton.id = i.toString();
+    //         newButton.className = "button-row";
+    //         newButton.classList.remove("button_active");
+    //
+    //         if (Number(currentPageIndex) === i) {
+    //             newButton.classList.add("button_active");
+    //         }
+    //         $(newButton).click(function () {
+    //             currentPageIndex = newButton.id;
+    //             countAccounts = getPlayers();
+    //             resetForm();
+    //             getAccounts(currentPageIndex, pagesNumber);
+    //         });
+    //         buttons.append(newButton);
+    //     }
+    // }
+    //
+    // function resetForm() {
+    //     let rowData = document.querySelectorAll('.data-row');
+    //     rowData.forEach(item => item.remove());
+    //     let buttonData = document.querySelectorAll('.button-row')
+    //     buttonData.forEach(item => item.remove());
+    // }
+    //
+    // function getPlayers() {
+    //     $.get(playersCount, function (data) {
+    //         countAccounts = data;
+    //     });
+    //     return countAccounts;
+    // }
+    //
+    // function editAcc(id) {
+    //
+    //     let editImage = document.getElementById(id + "edit");
+    //     let deleteImage = document.getElementById(id + "delete");
+    //     editImage.src="";
+    //
+    //     editImage.src = "/img/save.png";
+    //     deleteImage.src = "";
+    //     editImage.id=id+"save";
+    //      let editRow = editImage.parentNode.parentNode;
+    //
+    //     let children = editRow.children;
+    //     let td_name = children[1];
+    //
+    //     let td_title = children[2];
+    //     let td_race = children[3];
+    //     let race_id = "#race" + id;
+    //     let race_current_value = td_race.innerHTML;
+    //
+    //     let td_profession = children[4];
+    //     let profession_id = "#profession" + id;
+    //     let profession_current_value = td_profession.innerHTML;
+    //
+    //     let td_banned = children[7];
+    //     let banned_id = "#banned" + id;
+    //     let banned_current_value = td_banned.innerHTML;
+    //
+    //     td_name.innerHTML = "<input id= 'input_name_" + id + "'type ='text'value='" + td_name.innerHTML + "'>";
+    //     td_title.innerHTML = "<input id= 'input_title_" + id + "'type ='text'value='" + td_title.innerHTML + "'>";
+    //     td_race.innerHTML = getDropdownRace(id);
+    //     $(race_id).val(race_current_value).change;
+    //     //
+    //     td_profession.innerHTML = getDropdownProfession(id);
+    //     $(profession_id).val(profession_current_value).change;
+    //     //
+    //     td_banned.innerHTML = getDropdownBanned(id);
+    //     $(banned_id).val(banned_current_value).change;
+    //
+    // }
+    //
+    // function saveAcc(id) {
+    //     let value_name = $('#input_name_' + id).val();
+    //
+    //     let value_title = $("#input_title_" + id).val();
+    //     let value_race = $("#input_race_" + id).val();
+    //     console.log(value_race);
+    //     let value_profession = $("#input_profession_" + id).val();
+    //     let value_banned = $("#input_banned_" + id).val();
+    //
+    //     let url = "/rest/players/" + id;
+    //     $.ajax({
+    //         url: url,
+    //         type: 'POST',
+    //         dataType: 'json',
+    //         contentType: 'application/json;charset=UTF-8',
+    //         async: false,
+    //         data: JSON.stringify(({
+    //             "name": value_name,
+    //             "title": value_title,
+    //             "race": value_race,
+    //             "profession": value_profession,
+    //             "banned": value_banned
+    //         })),
+    //         success: function () {
+    //             resetForm();
+    //             getAccounts();
+    //         }
+    //
+    //     })
+    //
+    // }
+    //
+    // function deleteAcc(id) {
+    //
+    //     let url = "/rest/players/" + id;
+    //     $.ajax({
+    //         url: url,
+    //         type: "DELETE",
+    //         success: function () {
+    //             resetForm();
+    //             getAccounts(currentPageIndex, pagesNumber);
+    //         }
+    //     });
+    // }
+    //
+    // function getDropdownRace(id) {
+    //     let raceID = "race" + id;
+    //     return "<label for = 'race'></label>"
+    //         + "<select id='" + raceID + "'>"
+    //         + "<option value='HUMAN'>HUMAN</option>"
+    //         + "<option value='DWARF'>DWARF</option>"
+    //         + "<option value='ELF'>ELF</option>"
+    //         + "<option value='GIANT'>GIANT</option>"
+    //         + "<option value='ORC'>ORC</option>"
+    //         + "<option value='TROLL'>TROLL</option>"
+    //         + "<option value='HOBBIT'>HOBBIT</option>"
+    //         + "</select>";
+    // }
+    //
+    // function getDropdownProfession(id) {
+    //     let professionID = "profession" + id;
+    //     return "<label for = 'profession'></label>"
+    //         + "<select id='" + professionID + "'>"
+    //         + "<option value='WARRIOR'>WARRIOR</option>"
+    //         + "<option value='ROGUE'>ROGUE</option>"
+    //         + "<option value='SORCERER'>SORCERER</option>"
+    //         + "<option value='CLERIC'>CLERIC</option>"
+    //         + "<option value='PALADIN'>PALADIN</option>"
+    //         + "<option value='NAZGUL'>NAZGUL</option>"
+    //         + "<option value='WARLOCK'>WARLOCK</option>"
+    //         + "<option value='DRUID'>DRUID</option>"
+    //         + "</select>";
+    // }
+    //
+    // function getDropdownBanned(id) {
+    //     let bannedID = "banned" + id;
+    //     return "<label for = 'banned'></label>"
+    //         + "<select id='" + bannedID + "'>"
+    //         + "<option value='false'>false</option>"
+    //         + "<option value='true'>true</option>"
+    //         + "</select>";
+    // }
+    //
+    //
+    // $("select").change(function () {
+    //     pagesNumber = Number(this.value);
+    //     currentPageIndex = 0;
+    //     resetForm();
+    //     getAccounts(currentPageIndex, pagesNumber);
+    // });
+    //
+    //
+    // resetForm();
+    // getAccounts(currentPageIndex, pagesNumber);
+    // getPlayers();
+    //
+    // let rowData = document.getElementsByClassName('table__edit');
+    // rowData.forEach(item => item.addEventListener("click", editAcc(Number.parseInt(item.id))));
 
-        let url = "/rest/players/" + id;
-        $.ajax({
-            url: url,
-            type: "DELETE",
-            success: function () {
-                resetForm();
-                getAccounts(currentPageIndex, pagesNumber);
-            }
-        });
-    }
-
-    function getDropdownRace(id) {
-        let raceID = "race" + id;
-        return "<label for = 'race'></label>"
-            + "<select id='" + raceID + "'>"
-            + "<option value='HUMAN'>HUMAN</option>"
-            + "<option value='DWARF'>DWARF</option>"
-            + "<option value='ELF'>ELF</option>"
-            + "<option value='GIANT'>GIANT</option>"
-            + "<option value='ORC'>ORC</option>"
-            + "<option value='TROLL'>TROLL</option>"
-            + "<option value='HOBBIT'>HOBBIT</option>"
-            + "</select>";
-    }
-
-    function getDropdownProfession(id) {
-        let professionID = "profession" + id;
-        return "<label for = 'profession'></label>"
-            + "<select id='" + professionID + "'>"
-            + "<option value='WARRIOR'>WARRIOR</option>"
-            + "<option value='ROGUE'>ROGUE</option>"
-            + "<option value='SORCERER'>SORCERER</option>"
-            + "<option value='CLERIC'>CLERIC</option>"
-            + "<option value='PALADIN'>PALADIN</option>"
-            + "<option value='NAZGUL'>NAZGUL</option>"
-            + "<option value='WARLOCK'>WARLOCK</option>"
-            + "<option value='DRUID'>DRUID</option>"
-            + "</select>";
-    }
-
-    function getDropdownBanned(id) {
-        let bannedID = "banned" + id;
-        return "<label for = 'banned'></label>"
-            + "<select id='" + bannedID + "'>"
-            + "<option value='false'>false</option>"
-            + "<option value='true'>true</option>"
-            + "</select>";
-    }
-
-
-
-    $("select").change(function () {
-        pagesNumber = Number(this.value);
-        currentPageIndex = 0;
-        resetForm();
-        getAccounts(currentPageIndex, pagesNumber);
-    });
-
-
-    resetForm();
-    getAccounts(currentPageIndex, pagesNumber);
-    getPlayers();
 </script>
 </body>
 </html>
